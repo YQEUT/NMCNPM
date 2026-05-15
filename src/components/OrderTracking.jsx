@@ -40,7 +40,12 @@ const OrderTracking = () => {
         const matchesSearch = 
             order.id.toString().includes(searchTerm) || 
             (order.customer_name || "").toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
+        
+        // Nếu chọn "Tất cả", chúng ta sẽ ẩn các đơn đã hủy để trang sạch sẽ theo ý bạn
+        const matchesStatus = filterStatus === 'all' 
+            ? order.status !== 'cancelled' 
+            : order.status === filterStatus;
+            
         return matchesSearch && matchesStatus;
     });
 
