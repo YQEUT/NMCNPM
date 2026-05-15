@@ -173,7 +173,7 @@ const Cart = () => {
                                 variant="primary" 
                                 size="lg" 
                                 className="rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2"
-                                onClick={handleCheckout}
+                                onClick={() => navigate('/checkout')}
                             >
                                 <FiCreditCard /> THANH TOÁN NGAY
                             </Button>

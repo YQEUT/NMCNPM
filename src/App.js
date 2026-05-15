@@ -8,6 +8,7 @@ import Cart from './components/Cart';
 import Shop from './components/Shop';
 import OrderTracking from './components/OrderTracking';
 import SearchResults from './components/SearchResults';
+import Checkout from './components/Checkout';
 import Footer from './components/Footer';
 import { CartProvider } from './context/CartContext';
 import './index.css';
@@ -25,6 +26,7 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/order-tracking" element={<OrderTracking />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
       </Container>
