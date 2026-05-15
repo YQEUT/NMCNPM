@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Modal, Button } from 'react-bootstrap';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { 
     FiArrowRight, 
