@@ -72,27 +72,47 @@ const Header = () => {
         }
     };
 
-    const handleLogin = async (e) => {
+    const handleAuth = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
-            const users = await apiService.getUsers();
-            const user = users.find(u => 
-                u.username === loginData.username && u.password === loginData.password
-            );
+            if (isLogin) {
+                // Login Logic
+                const users = await apiService.getUsers();
+                const user = users.find(u => 
+                    u.username === loginData.username && u.password === loginData.password
+                );
 
-            if (user) {
-                console.log('Login success:', user);
-                setShowAuth(false);
-                if (user.role === 'admin') {
-                    navigate('/admin');
+                if (user) {
+                    console.log('Login success:', user);
+                    setShowAuth(false);
+                    if (user.role === 'admin') {
+                        navigate('/admin');
+                    } else {
+                        alert('Đăng nhập thành công!');
+                    }
                 } else {
-                    alert('Đăng nhập thành công!');
+                    setError('Tên đăng nhập hoặc mật khẩu không đúng!');
                 }
             } else {
-                setError('Tên đăng nhập hoặc mật khẩu không đúng!');
+                // Register Logic
+                const users = await apiService.getUsers();
+                if (users.some(u => u.username === loginData.username)) {
+                    setError('Tên đăng nhập đã tồn tại!');
+                    return;
+                }
+
+                await apiService.createUser({
+                    username: loginData.username,
+                    password: loginData.password,
+                    role: 'user',
+                    full_name: loginData.username // Mặc định dùng username làm tên
+                });
+
+                alert('Đăng ký thành công! Hãy đăng nhập.');
+                setIsLogin(true);
             }
         } catch (err) {
             console.error(err);
@@ -193,7 +213,7 @@ const Header = () => {
                 <Modal.Body className="px-4 pb-4">
                     {error && <Alert variant="danger" className="py-2 fs-7">{error}</Alert>}
                     
-                    <Form className="mt-3" onSubmit={handleLogin}>
+                    <Form className="mt-3" onSubmit={handleAuth}>
                         <Form.Group className="mb-3 auth-input-group">
                             <FiUser className="input-icon" />
                             <Form.Control 
@@ -218,19 +238,13 @@ const Header = () => {
                             />
                         </Form.Group>
 
-                        {isLogin ? (
-                            <Button variant="primary" type="submit" className="w-100 py-2 fw-bold btn-auth mb-3" disabled={loading}>
-                                {loading ? 'Đang kiểm tra...' : 'Đăng Nhập'}
-                            </Button>
-                        ) : (
-                            <Button variant="primary" className="w-100 py-2 fw-bold btn-auth mb-3">
-                                Đăng Ký
-                            </Button>
-                        )}
+                        <Button variant="primary" type="submit" className="w-100 py-2 fw-bold btn-auth mb-3" disabled={loading}>
+                            {loading ? 'Đang xử lý...' : (isLogin ? 'Đăng Nhập' : 'Đăng Ký')}
+                        </Button>
 
                         <div className="divider"><span>Hoặc</span></div>
 
-                        <Button variant="outline-dark" className="w-100 py-2 d-flex align-items-center justify-content-center gap-2 btn-google mb-3">
+                        <Button variant="outline-dark" className="w-100 py-2 d-flex align-items-center justify-content-center gap-2 btn-google mb-3" type="button">
                             <FcGoogle size={20} /> Đăng nhập với Google
                         </Button>
 

@@ -62,6 +62,12 @@ export const apiService = {
     return data;
   },
 
+  createUser: async (userData) => {
+    const { data, error } = await supabase.from('users').insert([userData]).select().single();
+    if (error) throw error;
+    return data;
+  },
+
   // Order management
   getOrders: async () => {
     const { data, error } = await supabase.from('orders').select('*');
