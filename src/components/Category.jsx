@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Modal, Button } from 'react-bootstrap';
-import axios from 'axios';
+import { apiService } from '../services/api';
 import { FiArrowLeft, FiLayers, FiBookOpen, FiStar, FiBriefcase, FiHeart, FiEdit3, FiTrendingUp, FiShoppingCart, FiCalendar, FiHome, FiCheckCircle } from 'react-icons/fi';
 
 import { useCart } from '../context/CartContext';
@@ -33,8 +33,8 @@ const Category = () => {
         const fetchCategoryData = async () => {
             setLoading(true);
             try {
-                const res = await axios.get('http://localhost:9999/category');
-                setBooks(res.data[catKey] || []);
+                const data = await apiService.getCategories();
+                setBooks(data[catKey] || []);
             } catch (error) {
                 console.error("Error fetching category books:", error);
             } finally {

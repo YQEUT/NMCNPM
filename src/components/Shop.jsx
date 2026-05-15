@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Modal, Button } from 'react-bootstrap';
-import axios from 'axios';
+import { apiService } from '../services/api';
 import { Link } from 'react-router-dom';
 import { 
     FiLayers, 
@@ -43,8 +43,8 @@ const Shop = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await axios.get('http://localhost:9999/category');
-                setAllCategories(res.data);
+                const data = await apiService.getCategories();
+                setAllCategories(data);
             } catch (error) {
                 console.error("Error fetching books:", error);
             } finally {

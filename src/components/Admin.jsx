@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Table, Button, Form, Modal, Row, Col, Alert, Tabs, Tab, Card } from 'react-bootstrap';
-import axios from 'axios';
+import { apiService } from '../services/api';
 import { FiPlus, FiEdit2, FiTrash2, FiBox, FiGrid, FiBarChart2 } from 'react-icons/fi';
 
 const Admin = () => {
@@ -25,10 +25,10 @@ const Admin = () => {
 
     const fetchData = useCallback(async () => {
         try {
-            const res = await axios.get('http://localhost:9999/category');
-            setCategories(res.data);
+            const data = await apiService.getCategories();
+            setCategories(data);
             if (!activeTab) {
-                const firstCat = Object.keys(res.data)[0];
+                const firstCat = Object.keys(data)[0];
                 if (firstCat) setActiveTab(firstCat);
             }
         } catch (error) {
@@ -82,59 +82,40 @@ const Admin = () => {
         setImgError('');
 
         try {
-            const updatedCategories = { ...categories };
             const origPrice = Number(formData.original_price);
             const disc = Number(formData.discount);
             const sellingPrice = Math.round(origPrice * (1 - disc / 100));
 
-            const bookId = currentBook ? currentBook.id : Date.now();
             const bookData = {
-                ...formData,
-                id: bookId,
+                ...(currentBook?.id ? { id: currentBook.id } : {}),
+                name: formData.name,
+                author: formData.author,
+                publisher: formData.publisher,
+                year: formData.year ? Number(formData.year) : null,
                 original_price: origPrice,
                 discount: disc,
                 price: sellingPrice,
                 quantity: Number(formData.quantity),
-                year: formData.year ? Number(formData.year) : ''
+                image: formData.image,
+                description: formData.description
             };
 
-            // Duyệt qua TẤT CẢ danh mục để đồng bộ
-            Object.keys(updatedCategories).forEach(catKey => {
-                const isInTarget = targetCategories.includes(catKey);
-                const existsAtIndex = updatedCategories[catKey].findIndex(b => b.id === bookId);
-
-                if (isInTarget) {
-                    if (existsAtIndex > -1) {
-                        // Cập nhật dữ liệu mới vào danh mục này
-                        updatedCategories[catKey][existsAtIndex] = bookData;
-                    } else {
-                        // Thêm mới vào danh mục này
-                        updatedCategories[catKey] = [...updatedCategories[catKey], bookData];
-                    }
-                } else {
-                    if (existsAtIndex > -1) {
-                        // Xóa khỏi danh mục nếu người dùng bỏ chọn
-                        updatedCategories[catKey] = updatedCategories[catKey].filter(b => b.id !== bookId);
-                    }
-                }
-            });
-
-            await axios.put('http://localhost:9999/category', updatedCategories);
+            await apiService.upsertProduct(bookData, targetCategories);
+            
             setMsg('Cập nhật thành công!');
             setShowModal(false);
             fetchData();
             setTimeout(() => setMsg(''), 3000);
         } catch (error) {
+            console.error(error);
             alert("Có lỗi xảy ra!");
         }
     };
 
-    const handleDelete = async (bookId, cat) => {
-        if (window.confirm('Xóa sản phẩm này?')) {
+    const handleDelete = async (bookId) => {
+        if (window.confirm('Xóa sản phẩm này khỏi hệ thống?')) {
             try {
-                const updatedCategories = { ...categories };
-                updatedCategories[cat] = updatedCategories[cat].filter(b => b.id !== bookId);
-                await axios.put('http://localhost:9999/category', updatedCategories);
+                await apiService.deleteProduct(bookId);
                 fetchData();
             } catch (error) {
                 console.error(error);

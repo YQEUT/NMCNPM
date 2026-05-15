@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fi';
 
 import { useCart } from '../context/CartContext';
+import { apiService } from '../services/api';
 
 const Home = () => {
     const { addToCart } = useCart();
@@ -44,8 +45,8 @@ const Home = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await axios.get('http://localhost:9999/category');
-                setAllCategories(res.data);
+                const data = await apiService.getCategories();
+                setAllCategories(data);
             } catch (error) {
                 console.error("Error fetching books:", error);
             } finally {

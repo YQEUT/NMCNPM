@@ -3,7 +3,7 @@ import { Container, Modal, Form, Button, Alert } from 'react-bootstrap';
 import { FiSearch, FiTruck, FiShoppingCart, FiUser, FiBook, FiLock } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiService } from '../services/api';
 import { useCart } from '../context/CartContext';
 
 const Header = () => {
@@ -25,9 +25,9 @@ const Header = () => {
     useEffect(() => {
         const fetchAllBooks = async () => {
             try {
-                const res = await axios.get('http://localhost:9999/category');
+                const data = await apiService.getCategories();
                 let books = [];
-                Object.values(res.data).forEach(catBooks => {
+                Object.values(data).forEach(catBooks => {
                     books = [...books, ...catBooks];
                 });
                 // Lọc trùng ID
@@ -78,8 +78,8 @@ const Header = () => {
         setLoading(true);
 
         try {
-            const res = await axios.get('http://localhost:9999/users');
-            const user = res.data.find(u => 
+            const users = await apiService.getUsers();
+            const user = users.find(u => 
                 u.username === loginData.username && u.password === loginData.password
             );
 

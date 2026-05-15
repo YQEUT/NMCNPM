@@ -3,7 +3,7 @@ import { Container, Table, Button, Row, Col, Card, Alert, Modal } from 'react-bo
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiTrash2, FiMinus, FiPlus, FiArrowLeft, FiShoppingCart, FiCreditCard, FiTruck, FiCheckCircle } from 'react-icons/fi';
-import axios from 'axios';
+import { apiService } from '../services/api';
 
 const Cart = () => {
     const { cartItems, removeFromCart, updateQuantity, clearCart } = useCart();
@@ -17,22 +17,24 @@ const Cart = () => {
 
     const handleCheckout = async () => {
         const newOrder = {
-            id: Date.now().toString(),
-            date: new Date().toLocaleString('vi-VN'),
-            customerName: "Khách hàng vãng lai",
-            address: "123 Đường ABC, Quận XYZ, TP.HCM",
-            phone: "0901234567",
+            created_at: new Date().toISOString(),
+            customer_name: "Khách hàng vãng lai",
+            customer_address: "123 Đường ABC, Quận XYZ, TP.HCM",
+            customer_phone: "0901234567",
             items: cartItems,
-            total: total,
-            status: 'pending' // Mặc định là chờ xử lý
+            total_amount: total,
+            status: 'pending'
         };
 
         try {
-            await axios.post('http://localhost:9999/orders', newOrder);
-            setOrderId(newOrder.id);
+            const data = await apiService.createOrder(newOrder);
+            // Supabase returns an array for inserts, if successful it will have data[0].id
+            // Or if we didn't specify id, it will be generated.
+            setOrderId(data?.[0]?.id || Date.now().toString());
             setShowCheckoutSuccess(true);
             clearCart();
         } catch (error) {
+            console.error(error);
             alert("Có lỗi xảy ra khi đặt hàng!");
         }
     };

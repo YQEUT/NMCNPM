@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Modal, Button, Spinner } from 'react-bootstrap';
 import { useLocation, Link } from 'react-router-dom';
-import axios from 'axios';
+import { apiService } from '../services/api';
 import { 
     FiSearch, 
     FiShoppingCart, 
@@ -27,8 +27,8 @@ const SearchResults = () => {
         const fetchResults = async () => {
             setLoading(true);
             try {
-                const res = await axios.get('http://localhost:9999/category');
-                const categories = res.data;
+                const data = await apiService.getCategories();
+                const categories = data;
                 
                 // Gom tất cả sách từ mọi danh mục vào 1 mảng phẳng
                 let allBooks = [];

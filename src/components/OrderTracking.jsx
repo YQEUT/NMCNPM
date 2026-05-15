@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Badge, Card, Row, Col, Form, InputGroup, Button, Spinner } from 'react-bootstrap';
 import { FiSearch, FiPackage, FiTruck, FiCheckCircle, FiClock, FiXCircle, FiCalendar, FiUser, FiMapPin, FiPhone } from 'react-icons/fi';
-import axios from 'axios';
+import { apiService } from '../services/api';
 
 const OrderTracking = () => {
     const [orders, setOrders] = useState([]);
@@ -15,9 +15,9 @@ const OrderTracking = () => {
 
     const fetchOrders = async () => {
         try {
-            const res = await axios.get('http://localhost:9999/orders');
+            const data = await apiService.getOrders();
             // Sắp xếp đơn mới nhất lên đầu
-            setOrders(res.data.reverse());
+            setOrders(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
         } catch (error) {
             console.error("Error fetching orders:", error);
         } finally {
@@ -39,7 +39,7 @@ const OrderTracking = () => {
     const filteredOrders = orders.filter(order => {
         const matchesSearch = 
             order.id.toString().includes(searchTerm) || 
-            order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+            (order.customer_name || "").toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
         return matchesSearch && matchesStatus;
     });
@@ -109,7 +109,7 @@ const OrderTracking = () => {
                                 <div>
                                     <span className="text-muted small">Mã đơn hàng:</span>
                                     <span className="fw-bold ms-2 text-primary">#{order.id}</span>
-                                    <span className="ms-3 text-muted small"><FiCalendar className="me-1" /> {order.date}</span>
+                                    <span className="ms-3 text-muted small"><FiCalendar className="me-1" /> {new Date(order.created_at).toLocaleString('vi-VN')}</span>
                                 </div>
                                 {getStatusBadge(order.status)}
                             </Card.Header>
@@ -119,13 +119,13 @@ const OrderTracking = () => {
                                         <div className="mb-4">
                                             <h6 className="fw-bold text-uppercase small text-muted mb-3">Thông tin khách hàng</h6>
                                             <div className="d-flex align-items-center gap-2 mb-2">
-                                                <FiUser className="text-primary" /> <strong>{order.customerName}</strong>
+                                                <FiUser className="text-primary" /> <strong>{order.customer_name}</strong>
                                             </div>
                                             <div className="d-flex align-items-center gap-2 mb-2 small">
-                                                <FiMapPin className="text-muted" /> {order.address}
+                                                <FiMapPin className="text-muted" /> {order.customer_address}
                                             </div>
                                             <div className="d-flex align-items-center gap-2 small">
-                                                <FiPhone className="text-muted" /> {order.phone}
+                                                <FiPhone className="text-muted" /> {order.customer_phone}
                                             </div>
                                         </div>
                                     </Col>
@@ -146,7 +146,7 @@ const OrderTracking = () => {
                                             ))}
                                             <div className="mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
                                                 <span className="fw-bold text-dark">Tổng tiền thanh toán:</span>
-                                                <span className="h5 fw-bold text-primary mb-0">{order.total.toLocaleString()}đ</span>
+                                                <span className="h5 fw-bold text-primary mb-0">{Number(order.total_amount).toLocaleString()}đ</span>
                                             </div>
                                         </div>
                                     </Col>
