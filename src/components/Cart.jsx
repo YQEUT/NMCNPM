@@ -178,8 +178,13 @@ const Cart = () => {
                                 <FiCreditCard /> THANH TOÁN NGAY
                             </Button>
                             <div className="text-center mt-2 small text-muted">
-                                <span className="d-block mb-1">Đảm bảo thanh toán an toàn 100%</span>
-                                <img src="https://salt.tikicdn.com/ts/upload/5e/c1/96/3273618306915f013d5a27893a7e58f0.png" alt="payments" height="20" />
+                                <span className="d-block mb-2">Đảm bảo thanh toán an toàn 100%</span>
+                                <div className="d-flex justify-content-center gap-3 align-items-center opacity-75">
+                                    <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="momo" height="22" />
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png" alt="paypal" height="18" />
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="visa" height="15" />
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="mastercard" height="20" />
+                                </div>
                             </div>
                         </div>
                     </Card>

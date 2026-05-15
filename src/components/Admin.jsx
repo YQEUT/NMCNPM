@@ -5,42 +5,46 @@ import { FiPlus, FiEdit2, FiTrash2, FiBox, FiGrid, FiBarChart2 } from 'react-ico
 
 const Admin = () => {
     const [categories, setCategories] = useState({});
+    const [users, setUsers] = useState([]);
+    const [orders, setOrders] = useState([]);
+    const [mainTab, setMainTab] = useState('products');
+    const [activeCat, setActiveCat] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [currentBook, setCurrentBook] = useState(null);
     const [formData, setFormData] = useState({
-        name: '',
-        author: '',
-        publisher: '',
-        year: '',
-        original_price: '',
-        discount: '',
-        quantity: '',
-        image: '',
-        description: ''
+        name: '', author: '', publisher: '', year: '', original_price: '',
+        discount: '', quantity: '', image: '', description: ''
     });
     const [msg, setMsg] = useState('');
     const [imgError, setImgError] = useState('');
-    const [activeTab, setActiveTab] = useState('');
-    const [targetCategories, setTargetCategories] = useState([]); // Lưu mảng các danh mục được chọn
+    const [targetCategories, setTargetCategories] = useState([]);
 
     const fetchData = useCallback(async () => {
         try {
-            const data = await apiService.getCategories();
-            setCategories(data);
-            if (!activeTab) {
-                const firstCat = Object.keys(data)[0];
-                if (firstCat) setActiveTab(firstCat);
+            const [catData, userData, orderData] = await Promise.all([
+                apiService.getCategories(),
+                apiService.getUsers(),
+                apiService.getOrders()
+            ]);
+            
+            setCategories(catData);
+            setUsers(userData);
+            setOrders(orderData);
+            
+            if (!activeCat) {
+                const firstCat = Object.keys(catData)[0];
+                if (firstCat) setActiveCat(firstCat);
             }
         } catch (error) {
             console.error("Error fetching data:", error);
         }
-    }, [activeTab]);
+    }, [activeCat]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    const handleShow = (book = null, cat = activeTab) => {
+    const handleShow = (book = null, cat = activeCat) => {
         if (book) {
             setCurrentBook(book);
             // Tìm tất cả các danh mục mà cuốn sách này đang xuất hiện
@@ -196,66 +200,142 @@ const Admin = () => {
 
             {msg && <Alert variant="success" className="border-0 shadow-sm">{msg}</Alert>}
 
-            {/* Content Tabs */}
-            <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
-                <Card.Header className="bg-white border-0 pt-3">
-                    <Tabs
-                        activeKey={activeTab}
-                        onSelect={(k) => setActiveTab(k)}
-                        className="admin-tabs border-0 overflow-auto flex-nowrap"
-                    >
-                        {Object.keys(categories).map(catKey => (
-                            <Tab 
-                                key={catKey} 
-                                eventKey={catKey} 
-                                title={categoryMap[catKey] || catKey}
-                            />
-                        ))}
-                    </Tabs>
-                </Card.Header>
-                <Card.Body className="p-0">
-                    <Table hover className="admin-table m-0">
-                        <thead>
-                            <tr>
-                                <th className="ps-4">Sản phẩm</th>
-                                <th>Tác giả</th>
-                                <th>Số lượng</th>
-                                <th>Giá gốc</th>
-                                <th>Giảm giá</th>
-                                <th>Giá bán</th>
-                                <th className="text-end pe-4">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {categories[activeTab]?.map(book => (
-                                <tr key={book.id} className="align-middle">
-                                    <td className="ps-4">
-                                        <div className="d-flex align-items-center gap-3">
-                                            <img src={book.image} alt="" className="rounded-2" style={{ width: '45px', height: '60px', objectFit: 'cover' }} />
-                                            <div className="fw-semibold">{book.name}</div>
-                                        </div>
-                                    </td>
-                                    <td className="text-muted">{book.author}</td>
-                                    <td><span className={`badge ${book.quantity > 0 ? 'bg-light text-dark' : 'bg-danger-subtle text-danger'}`}>{book.quantity || 0}</span></td>
-                                    <td className="text-muted small text-decoration-line-through">{Number(book.original_price || book.price).toLocaleString()}đ</td>
-                                    <td><span className="text-danger fw-bold">-{book.discount || 0}%</span></td>
-                                    <td className="fw-bold text-primary">{Number(book.price).toLocaleString()}đ</td>
-                                    <td className="text-end pe-4">
-                                        <div className="d-flex justify-content-end gap-2">
-                                            <Button variant="light" size="sm" className="rounded-circle btn-icon" onClick={() => handleShow(book, activeTab)}>
-                                                <FiEdit2 size={14} className="text-primary" />
-                                            </Button>
-                                            <Button variant="light" size="sm" className="rounded-circle btn-icon" onClick={() => handleDelete(book.id, activeTab)}>
-                                                <FiTrash2 size={14} className="text-danger" />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
+            {/* Main Navigation Tabs */}
+            <Tabs
+                activeKey={mainTab}
+                onSelect={(k) => setMainTab(k)}
+                className="main-admin-tabs mb-4 border-0"
+            >
+                <Tab eventKey="products" title={<span><FiBox className="me-2"/>Sản phẩm</span>} />
+                <Tab eventKey="orders" title={<span><FiGrid className="me-2"/>Đơn hàng</span>} />
+                <Tab eventKey="customers" title={<span><FiPlus className="me-2" style={{transform: 'rotate(45deg)'}}/>Khách hàng</span>} />
+            </Tabs>
+
+            {mainTab === 'products' && (
+                <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
+                    <Card.Header className="bg-white border-0 pt-3">
+                        <Tabs
+                            activeKey={activeCat}
+                            onSelect={(k) => setActiveCat(k)}
+                            className="admin-tabs border-0 overflow-auto flex-nowrap"
+                        >
+                            {Object.keys(categories).map(catKey => (
+                                <Tab 
+                                    key={catKey} 
+                                    eventKey={catKey} 
+                                    title={categoryMap[catKey] || catKey}
+                                />
                             ))}
-                        </tbody>
-                    </Table>
-                </Card.Body>
-            </Card>
+                        </Tabs>
+                    </Card.Header>
+                    <Card.Body className="p-0">
+                        <Table hover className="admin-table m-0">
+                            <thead>
+                                <tr>
+                                    <th className="ps-4">Sản phẩm</th>
+                                    <th>Tác giả</th>
+                                    <th>Số lượng</th>
+                                    <th>Giá bán</th>
+                                    <th className="text-end pe-4">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {categories[activeCat]?.map(book => (
+                                    <tr key={book.id} className="align-middle">
+                                        <td className="ps-4">
+                                            <div className="d-flex align-items-center gap-3">
+                                                <img src={book.image} alt="" className="rounded-2" style={{ width: '45px', height: '60px', objectFit: 'cover' }} />
+                                                <div className="fw-semibold">{book.name}</div>
+                                            </div>
+                                        </td>
+                                        <td className="text-muted">{book.author}</td>
+                                        <td><span className={`badge ${book.quantity > 0 ? 'bg-light text-dark' : 'bg-danger-subtle text-danger'}`}>{book.quantity || 0}</span></td>
+                                        <td className="fw-bold text-primary">{Number(book.price).toLocaleString()}đ</td>
+                                        <td className="text-end pe-4">
+                                            <div className="d-flex justify-content-end gap-2">
+                                                <Button variant="light" size="sm" className="rounded-circle btn-icon" onClick={() => handleShow(book, activeCat)}>
+                                                    <FiEdit2 size={14} className="text-primary" />
+                                                </Button>
+                                                <Button variant="light" size="sm" className="rounded-circle btn-icon" onClick={() => handleDelete(book.id)}>
+                                                    <FiTrash2 size={14} className="text-danger" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </Card.Body>
+                </Card>
+            )}
+
+            {mainTab === 'orders' && (
+                <Card className="border-0 shadow-sm rounded-4">
+                    <Card.Body className="p-0">
+                        <Table hover className="admin-table m-0">
+                            <thead>
+                                <tr>
+                                    <th className="ps-4">Mã đơn</th>
+                                    <th>Khách hàng</th>
+                                    <th>Ngày đặt</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {orders.map(order => (
+                                    <tr key={order.id} className="align-middle">
+                                        <td className="ps-4 fw-bold text-muted">#{order.id}</td>
+                                        <td>
+                                            <div className="fw-semibold">{order.customer_name}</div>
+                                            <div className="small text-muted">{order.customer_phone}</div>
+                                        </td>
+                                        <td>{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
+                                        <td className="fw-bold text-primary">{Number(order.total_amount).toLocaleString()}đ</td>
+                                        <td>
+                                            <span className={`badge ${order.status === 'pending' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success'}`}>
+                                                {order.status === 'pending' ? 'Chờ xử lý' : 'Hoàn thành'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {orders.length === 0 && <tr><td colSpan="5" className="text-center py-4">Chưa có đơn hàng nào</td></tr>}
+                            </tbody>
+                        </Table>
+                    </Card.Body>
+                </Card>
+            )}
+
+            {mainTab === 'customers' && (
+                <Card className="border-0 shadow-sm rounded-4">
+                    <Card.Body className="p-0">
+                        <Table hover className="admin-table m-0">
+                            <thead>
+                                <tr>
+                                    <th className="ps-4">Họ tên</th>
+                                    <th>Tên đăng nhập</th>
+                                    <th>Vai trò</th>
+                                    <th>Ngày tham gia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map(user => (
+                                    <tr key={user.id} className="align-middle">
+                                        <td className="ps-4 fw-semibold">{user.full_name}</td>
+                                        <td>{user.username}</td>
+                                        <td>
+                                            <span className={`badge ${user.role === 'admin' ? 'bg-danger-subtle text-danger' : 'bg-info-subtle text-info'}`}>
+                                                {user.role === 'admin' ? 'Quản trị' : 'Khách hàng'}
+                                            </span>
+                                        </td>
+                                        <td>{new Date(user.created_at).toLocaleDateString('vi-VN')}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </Card.Body>
+                </Card>
+            )}
 
             {/* Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered className="admin-modal">
