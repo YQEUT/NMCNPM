@@ -76,7 +76,17 @@ export const apiService = {
   },
 
   createOrder: async (orderData) => {
-    const { data, error } = await supabase.from('orders').insert([orderData]);
+    const { data, error } = await supabase.from('orders').insert([orderData]).select();
+    if (error) throw error;
+    return data;
+  },
+
+  updateOrder: async (orderId, updateData) => {
+    const { data, error } = await supabase
+      .from('orders')
+      .update(updateData)
+      .eq('id', orderId)
+      .select();
     if (error) throw error;
     return data;
   },

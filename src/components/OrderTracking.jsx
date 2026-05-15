@@ -44,6 +44,23 @@ const OrderTracking = () => {
         return matchesSearch && matchesStatus;
     });
 
+    const handleCancelOrder = async (orderId) => {
+        if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+            try {
+                await apiService.updateOrder(orderId, { status: 'cancelled' });
+                fetchOrders();
+                alert('Đã hủy đơn hàng thành công.');
+            } catch (error) {
+                console.error("Error cancelling order:", error);
+                alert('Có lỗi xảy ra khi hủy đơn hàng.');
+            }
+        }
+    };
+
+    const formatOrderId = (id) => {
+        return `BK${id.toString().padStart(8, '0')}`;
+    };
+
     return (
         <Container className="py-5">
             <div className="mb-5">
@@ -108,7 +125,7 @@ const OrderTracking = () => {
                             <Card.Header className="bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center">
                                 <div>
                                     <span className="text-muted small">Mã đơn hàng:</span>
-                                    <span className="fw-bold ms-2 text-primary">#{order.id}</span>
+                                    <span className="fw-bold ms-2 text-primary">{formatOrderId(order.id)}</span>
                                     <span className="ms-3 text-muted small"><FiCalendar className="me-1" /> {new Date(order.created_at).toLocaleString('vi-VN')}</span>
                                 </div>
                                 {getStatusBadge(order.status)}
@@ -153,8 +170,8 @@ const OrderTracking = () => {
                                 </Row>
                             </Card.Body>
                             <Card.Footer className="bg-white py-3 border-top-0 d-flex justify-content-end gap-2">
-                                <Button variant="outline-secondary" size="sm" className="rounded-pill px-3">Chi tiết</Button>
-                                {order.status === 'pending' && <Button variant="danger" size="sm" className="rounded-pill px-3">Hủy đơn</Button>}
+                                <Button variant="outline-secondary" size="sm" className="rounded-pill px-3" onClick={() => alert('Thông tin chi tiết đã được hiển thị bên trên.')}>Chi tiết</Button>
+                                {order.status === 'pending' && <Button variant="danger" size="sm" className="rounded-pill px-3" onClick={() => handleCancelOrder(order.id)}>Hủy đơn</Button>}
                                 {order.status === 'completed' && <Button variant="primary" size="sm" className="rounded-pill px-3">Mua lại</Button>}
                             </Card.Footer>
                         </Card>
