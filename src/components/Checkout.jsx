@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Form, Button, Card, ListGroup, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
 import { useCart } from '../context/CartContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiChevronRight, FiMapPin, FiTruck, FiCreditCard, FiFileText, FiMessageSquare, FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
+import { FiMapPin, FiTruck, FiCreditCard, FiFileText, FiMessageSquare, FiArrowLeft } from 'react-icons/fi';
 import { apiService } from '../services/api';
 
 const Checkout = () => {

@@ -1,43 +1,17 @@
-import React, { useState } from 'react';
-import { Container, Table, Button, Row, Col, Card, Alert, Modal } from 'react-bootstrap';
+import React from 'react';
+import { Container, Table, Button, Row, Col, Card, Alert } from 'react-bootstrap';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiTrash2, FiMinus, FiPlus, FiArrowLeft, FiShoppingCart, FiCreditCard, FiTruck, FiCheckCircle } from 'react-icons/fi';
-import { apiService } from '../services/api';
+import { FiTrash2, FiMinus, FiPlus, FiArrowLeft, FiShoppingCart, FiCreditCard, FiTruck } from 'react-icons/fi';
 
 const Cart = () => {
     const { cartItems, removeFromCart, updateQuantity, clearCart } = useCart();
     const navigate = useNavigate();
-    const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
-    const [orderId, setOrderId] = useState('');
 
     const subtotal = cartItems.reduce((total, item) => total + (item.price * item.cartQuantity), 0);
     const shipping = subtotal > 0 ? 30000 : 0;
     const total = subtotal + shipping;
 
-    const handleCheckout = async () => {
-        const newOrder = {
-            created_at: new Date().toISOString(),
-            customer_name: "Khách hàng vãng lai",
-            customer_address: "123 Đường ABC, Quận XYZ, TP.HCM",
-            customer_phone: "0901234567",
-            items: cartItems,
-            total_amount: total,
-            status: 'pending'
-        };
-
-        try {
-            const data = await apiService.createOrder(newOrder);
-            // Supabase returns an array for inserts, if successful it will have data[0].id
-            // Or if we didn't specify id, it will be generated.
-            setOrderId(data?.[0]?.id || Date.now().toString());
-            setShowCheckoutSuccess(true);
-            clearCart();
-        } catch (error) {
-            console.error(error);
-            alert("Có lỗi xảy ra khi đặt hàng!");
-        }
-    };
 
     if (cartItems.length === 0) {
         return (
@@ -191,24 +165,6 @@ const Cart = () => {
                 </Col>
             </Row>
 
-            {/* Success Modal */}
-            <Modal show={showCheckoutSuccess} centered onHide={() => navigate('/order-tracking')} backdrop="static">
-                <Modal.Body className="text-center p-5">
-                    <div className="mb-4">
-                        <FiCheckCircle size={80} className="text-success" />
-                    </div>
-                    <h2 className="fw-bold mb-3">Đặt hàng thành công!</h2>
-                    <p className="text-muted mb-4">
-                        Mã đơn hàng của bạn là <span className="fw-bold text-primary">#{orderId}</span>.<br />
-                        Bạn có thể tra cứu trạng thái đơn hàng bất cứ lúc nào.
-                    </p>
-                    <div className="d-grid">
-                        <Button variant="primary" size="lg" className="rounded-pill py-3 fw-bold" onClick={() => navigate('/order-tracking')}>
-                            TRA CỨU ĐƠN HÀNG NGAY
-                        </Button>
-                    </div>
-                </Modal.Body>
-            </Modal>
         </Container>
     );
 };
