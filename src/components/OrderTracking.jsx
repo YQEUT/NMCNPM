@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Badge, Card, Row, Col, Form, InputGroup, Button, Spinner, Modal, Table } from 'react-bootstrap';
-import { FiSearch, FiPackage, FiTruck, FiCheckCircle, FiClock, FiXCircle, FiCalendar, FiUser, FiMapPin, FiPhone, FiInfo, FiMail, FiCreditCard } from 'react-icons/fi';
+import { FiSearch, FiPackage, FiTruck, FiCheckCircle, FiClock, FiXCircle, FiCalendar, FiUser, FiMapPin, FiPhone, FiInfo, FiMail, FiCreditCard, FiLock } from 'react-icons/fi';
 import { apiService } from '../services/api';
 import { supabase } from '../supabaseClient';
 
