@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Table, Button, Form, Modal, Row, Col, Alert, Tabs, Tab, Card } from 'react-bootstrap';
 import { apiService } from '../services/api';
-import { FiPlus, FiEdit2, FiTrash2, FiBox, FiGrid, FiBarChart2, FiUsers, FiRefreshCw } from 'react-icons/fi';
+import { apiService } from '../services/api';
+import { FiPlus, FiEdit2, FiTrash2, FiBox, FiGrid, FiBarChart2, FiUsers, FiRefreshCw, FiSearch, FiEye, FiDollarSign, FiTruck, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 
 const Admin = () => {
     const [categories, setCategories] = useState({});
@@ -19,6 +20,9 @@ const Admin = () => {
     const [imgError, setImgError] = useState('');
     const [targetCategories, setTargetCategories] = useState([]);
     const [customerSearch, setCustomerSearch] = useState('');
+    const [orderSearch, setOrderSearch] = useState('');
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [showOrderModal, setShowOrderModal] = useState(false);
 
     const fetchData = useCallback(async () => {
         try {
@@ -157,8 +161,30 @@ const Admin = () => {
         }
     };
 
+    const handleUpdateOrderStatus = async (orderId, newStatus) => {
+        try {
+            await apiService.updateOrder(orderId, { status: newStatus });
+            setMsg(`Đã cập nhật đơn hàng #${orderId} thành ${newStatus}`);
+            fetchData();
+            if (selectedOrder && selectedOrder.id === orderId) {
+                setSelectedOrder({ ...selectedOrder, status: newStatus });
+            }
+            setTimeout(() => setMsg(''), 3000);
+        } catch (error) {
+            console.error(error);
+            alert("Lỗi cập nhật trạng thái!");
+        }
+    };
+
+    const handleViewOrder = (order) => {
+        setSelectedOrder(order);
+        setShowOrderModal(true);
+    };
+
     // Stats calculation
     const totalBooks = Object.values(categories).reduce((acc, curr) => acc + curr.length, 0);
+    const totalRevenue = orders.reduce((acc, curr) => acc + Number(curr.total_amount || 0), 0);
+    const pendingOrders = orders.filter(o => o.status === 'pending').length;
 
     // Mapping category keys to Vietnamese names
     const categoryMap = {
@@ -196,10 +222,10 @@ const Admin = () => {
                 <Col md={3}>
                     <Card className="border-0 shadow-sm rounded-4 stats-card h-100">
                         <Card.Body className="d-flex align-items-center gap-3">
-                            <div className="stats-icon bg-primary-light text-primary"><FiBox /></div>
+                            <div className="stats-icon bg-primary-light text-primary"><FiDollarSign /></div>
                             <div>
-                                <div className="text-muted small">Tổng số sách</div>
-                                <div className="h4 fw-bold m-0">{totalBooks}</div>
+                                <div className="text-muted small">Doanh thu</div>
+                                <div className="h4 fw-bold m-0 text-dark">{totalRevenue.toLocaleString()}đ</div>
                             </div>
                         </Card.Body>
                     </Card>
@@ -207,10 +233,10 @@ const Admin = () => {
                 <Col md={3}>
                     <Card className="border-0 shadow-sm rounded-4 stats-card h-100">
                         <Card.Body className="d-flex align-items-center gap-3">
-                            <div className="stats-icon bg-success-light text-success"><FiGrid /></div>
+                            <div className="stats-icon bg-warning-light text-warning"><FiClock /></div>
                             <div>
-                                <div className="text-muted small">Danh mục</div>
-                                <div className="h4 fw-bold m-0">{Object.keys(categories).length}</div>
+                                <div className="text-muted small">Đơn chờ xử lý</div>
+                                <div className="h4 fw-bold m-0">{pendingOrders}</div>
                             </div>
                         </Card.Body>
                     </Card>
@@ -229,10 +255,10 @@ const Admin = () => {
                 <Col md={3}>
                     <Card className="border-0 shadow-sm rounded-4 stats-card h-100">
                         <Card.Body className="d-flex align-items-center gap-3">
-                            <div className="stats-icon bg-warning-light text-warning"><FiBarChart2 /></div>
+                            <div className="stats-icon bg-success-light text-success"><FiBox /></div>
                             <div>
-                                <div className="text-muted small">Hệ thống</div>
-                                <div className="h4 fw-bold m-0 text-success">Online</div>
+                                <div className="text-muted small">Tổng số sách</div>
+                                <div className="h4 fw-bold m-0">{totalBooks}</div>
                             </div>
                         </Card.Body>
                     </Card>
@@ -311,7 +337,25 @@ const Admin = () => {
             )}
 
             {mainTab === 'orders' && (
-                <Card className="border-0 shadow-sm rounded-4">
+                <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
+                    <Card.Header className="bg-white border-0 py-3">
+                        <div className="d-flex justify-content-between align-items-center">
+                            <h5 className="fw-bold m-0">Danh sách đơn hàng</h5>
+                            <div className="d-flex gap-2">
+                                <Form.Control 
+                                    type="text" 
+                                    placeholder="Mã đơn hoặc tên khách..." 
+                                    className="rounded-pill border-0 bg-light px-3 shadow-none" 
+                                    style={{ width: '250px' }}
+                                    value={orderSearch}
+                                    onChange={(e) => setOrderSearch(e.target.value)}
+                                />
+                                <Button variant="light" className="rounded-circle btn-icon" onClick={fetchData}>
+                                    <FiRefreshCw size={14} />
+                                </Button>
+                            </div>
+                        </div>
+                    </Card.Header>
                     <Card.Body className="p-0">
                         <Table hover className="admin-table m-0">
                             <thead>
@@ -321,26 +365,50 @@ const Admin = () => {
                                     <th>Ngày đặt</th>
                                     <th>Tổng tiền</th>
                                     <th>Trạng thái</th>
+                                    <th className="text-end pe-4">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {orders.map(order => (
+                                {orders.filter(o => 
+                                    o.id.toString().includes(orderSearch) || 
+                                    (o.customer_name || "").toLowerCase().includes(orderSearch.toLowerCase())
+                                ).map(order => (
                                     <tr key={order.id} className="align-middle">
-                                        <td className="ps-4 fw-bold text-muted">#{order.id}</td>
+                                        <td className="ps-4 fw-bold text-primary">BK{order.id.toString().padStart(8, '0')}</td>
                                         <td>
                                             <div className="fw-semibold">{order.customer_name}</div>
                                             <div className="small text-muted">{order.customer_phone}</div>
                                         </td>
-                                        <td>{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
-                                        <td className="fw-bold text-primary">{Number(order.total_amount).toLocaleString()}đ</td>
+                                        <td className="small">{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
+                                        <td className="fw-bold">{Number(order.total_amount).toLocaleString()}đ</td>
                                         <td>
-                                            <span className={`badge ${order.status === 'pending' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success'}`}>
-                                                {order.status === 'pending' ? 'Chờ xử lý' : 'Hoàn thành'}
-                                            </span>
+                                            <Form.Select 
+                                                size="sm" 
+                                                className={`status-select border-0 fw-bold rounded-pill px-3 ${
+                                                    order.status === 'pending' ? 'bg-warning-light text-warning' : 
+                                                    order.status === 'completed' ? 'bg-success-light text-success' : 
+                                                    order.status === 'cancelled' ? 'bg-danger-light text-danger' : 
+                                                    'bg-info-light text-info'
+                                                }`}
+                                                value={order.status}
+                                                onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                                                style={{ width: 'auto' }}
+                                            >
+                                                <option value="pending">Chờ xử lý</option>
+                                                <option value="processing">Đang đóng gói</option>
+                                                <option value="shipping">Đang giao</option>
+                                                <option value="completed">Thành công</option>
+                                                <option value="cancelled">Đã hủy</option>
+                                            </Form.Select>
+                                        </td>
+                                        <td className="text-end pe-4">
+                                            <Button variant="light" size="sm" className="rounded-circle btn-icon" onClick={() => handleViewOrder(order)}>
+                                                <FiEye size={14} className="text-primary" />
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))}
-                                {orders.length === 0 && <tr><td colSpan="5" className="text-center py-4">Chưa có đơn hàng nào</td></tr>}
+                                {orders.length === 0 && <tr><td colSpan="6" className="text-center py-5">Chưa có đơn hàng nào</td></tr>}
                             </tbody>
                         </Table>
                     </Card.Body>
@@ -538,6 +606,88 @@ const Admin = () => {
                     <Button variant="light" onClick={() => setShowModal(false)} className="rounded-pill px-4">Hủy</Button>
                     <Button variant="primary" onClick={handleSave} className="rounded-pill px-4">Lưu Dữ Liệu</Button>
                 </Modal.Footer>
+            </Modal>
+
+            {/* Modal Chi tiết đơn hàng */}
+            <Modal show={showOrderModal} onHide={() => setShowOrderModal(false)} size="lg" centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Chi Tiết Đơn Hàng BK{selectedOrder?.id.toString().padStart(8, '0')}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="px-4 pb-4">
+                    {selectedOrder && (
+                        <Row className="g-4">
+                            <Col md={7}>
+                                <h6 className="fw-bold mb-3 d-flex align-items-center gap-2"><FiBox /> Sản phẩm đã đặt</h6>
+                                <div className="border rounded-4 overflow-hidden mb-4">
+                                    <Table borderless hover className="m-0">
+                                        <thead className="bg-light small">
+                                            <tr>
+                                                <th>Sản phẩm</th>
+                                                <th className="text-center">SL</th>
+                                                <th className="text-end">Thành tiền</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedOrder.items && selectedOrder.items.map((item, idx) => (
+                                                <tr key={idx} className="border-bottom align-middle">
+                                                    <td>
+                                                        <div className="d-flex align-items-center gap-2">
+                                                            <img src={item.image} alt="" className="rounded shadow-sm" style={{ width: '35px', height: '50px', objectFit: 'cover' }} />
+                                                            <div className="small fw-bold text-truncate" style={{ maxWidth: '180px' }}>{item.name}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-center small">x{item.quantity}</td>
+                                                    <td className="text-end small fw-bold">{Number(item.price * item.quantity).toLocaleString()}đ</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
+                                    <div className="p-3 bg-light d-flex justify-content-between align-items-center">
+                                        <span className="fw-bold">Tổng cộng:</span>
+                                        <span className="h5 fw-bold text-primary m-0">{Number(selectedOrder.total_amount).toLocaleString()}đ</span>
+                                    </div>
+                                </div>
+                            </Col>
+                            <Col md={5}>
+                                <h6 className="fw-bold mb-3 d-flex align-items-center gap-2"><FiUser /> Thông tin khách hàng</h6>
+                                <div className="bg-light p-3 rounded-4 small mb-4">
+                                    <div className="mb-2"><span className="text-muted">Họ tên:</span> <span className="fw-bold">{selectedOrder.customer_name}</span></div>
+                                    <div className="mb-2"><span className="text-muted">Số ĐT:</span> <span className="fw-bold">{selectedOrder.customer_phone}</span></div>
+                                    <div className="mb-2"><span className="text-muted">Email:</span> <span className="fw-bold">{selectedOrder.customer_email || 'N/A'}</span></div>
+                                    <div className="mb-2"><span className="text-muted">Địa chỉ:</span> <span className="fw-bold d-block">{selectedOrder.customer_address}</span></div>
+                                </div>
+
+                                <h6 className="fw-bold mb-3">Cập nhật nhanh trạng thái</h6>
+                                <div className="d-grid gap-2">
+                                    <Button 
+                                        variant="outline-warning" 
+                                        size="sm" 
+                                        className={`rounded-pill ${selectedOrder.status === 'processing' ? 'active' : ''}`}
+                                        onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'processing')}
+                                    >Đang đóng gói</Button>
+                                    <Button 
+                                        variant="outline-info" 
+                                        size="sm" 
+                                        className={`rounded-pill ${selectedOrder.status === 'shipping' ? 'active' : ''}`}
+                                        onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'shipping')}
+                                    >Đang giao hàng</Button>
+                                    <Button 
+                                        variant="outline-success" 
+                                        size="sm" 
+                                        className={`rounded-pill ${selectedOrder.status === 'completed' ? 'active' : ''}`}
+                                        onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'completed')}
+                                    >Giao thành công</Button>
+                                    <Button 
+                                        variant="outline-danger" 
+                                        size="sm" 
+                                        className={`rounded-pill ${selectedOrder.status === 'cancelled' ? 'active' : ''}`}
+                                        onClick={() => handleUpdateOrderStatus(selectedOrder.id, 'cancelled')}
+                                    >Hủy đơn hàng</Button>
+                                </div>
+                            </Col>
+                        </Row>
+                    )}
+                </Modal.Body>
             </Modal>
         </Container>
     );
