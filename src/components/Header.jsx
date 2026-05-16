@@ -18,6 +18,13 @@ const Header = () => {
     const [showAuth, setShowAuth] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
     const [loginData, setLoginData] = useState({ username: '', password: '' });
+    const [registerData, setRegisterData] = useState({ 
+        firstName: '', 
+        lastName: '', 
+        email: '', 
+        password: '', 
+        confirmPassword: '' 
+    });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
@@ -151,18 +158,25 @@ const Header = () => {
                     setError('Tên đăng nhập hoặc mật khẩu không đúng!');
                 }
             } else {
-                // Register Logic
+                // Register Logic - Validation
+                if (registerData.password !== registerData.confirmPassword) {
+                    setError('Mật khẩu nhập lại không khớp!');
+                    setLoading(false);
+                    return;
+                }
+
                 const users = await apiService.getUsers();
-                if (users.some(u => u.username === loginData.username)) {
-                    setError('Tên đăng nhập đã tồn tại!');
+                if (users.some(u => u.username === registerData.email)) {
+                    setError('Email này đã được đăng ký!');
+                    setLoading(false);
                     return;
                 }
 
                 await apiService.createUser({
-                    username: loginData.username,
-                    password: loginData.password,
+                    username: registerData.email,
+                    password: registerData.password,
                     role: 'user',
-                    full_name: loginData.username // Mặc định dùng username làm tên
+                    full_name: `${registerData.lastName} ${registerData.firstName}`.trim()
                 });
 
                 alert('Đăng ký thành công! Hãy đăng nhập.');
@@ -293,29 +307,98 @@ const Header = () => {
                     {error && <Alert variant="danger" className="py-2 fs-7">{error}</Alert>}
                     
                     <Form className="mt-3" onSubmit={handleAuth}>
-                        <Form.Group className="mb-3 auth-input-group">
-                            <FiUser className="input-icon" />
-                            <Form.Control 
-                                type="text" 
-                                placeholder="Tên đăng nhập" 
-                                className="auth-input" 
-                                value={loginData.username}
-                                onChange={(e) => setLoginData({...loginData, username: e.target.value})}
-                                required
-                            />
-                        </Form.Group>
+                        {isLogin ? (
+                            <>
+                                <Form.Group className="mb-3 auth-input-group">
+                                    <FiUser className="input-icon" />
+                                    <Form.Control 
+                                        type="text" 
+                                        placeholder="Email hoặc Tên đăng nhập" 
+                                        className="auth-input" 
+                                        value={loginData.username}
+                                        onChange={(e) => setLoginData({...loginData, username: e.target.value})}
+                                        required
+                                    />
+                                </Form.Group>
 
-                        <Form.Group className="mb-3 auth-input-group">
-                            <FiLock className="input-icon" />
-                            <Form.Control 
-                                type="password" 
-                                placeholder="Mật khẩu" 
-                                className="auth-input" 
-                                value={loginData.password}
-                                onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                                required
-                            />
-                        </Form.Group>
+                                <Form.Group className="mb-3 auth-input-group">
+                                    <FiLock className="input-icon" />
+                                    <Form.Control 
+                                        type="password" 
+                                        placeholder="Mật khẩu" 
+                                        className="auth-input" 
+                                        value={loginData.password}
+                                        onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                                        required
+                                    />
+                                </Form.Group>
+                            </>
+                        ) : (
+                            <>
+                                <Row className="g-2 mb-3">
+                                    <Col md={6}>
+                                        <Form.Group className="auth-input-group">
+                                            <Form.Control 
+                                                type="text" 
+                                                placeholder="Họ" 
+                                                className="auth-input ps-3" 
+                                                value={registerData.lastName}
+                                                onChange={(e) => setRegisterData({...registerData, lastName: e.target.value})}
+                                                required
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Form.Group className="auth-input-group">
+                                            <Form.Control 
+                                                type="text" 
+                                                placeholder="Tên" 
+                                                className="auth-input ps-3" 
+                                                value={registerData.firstName}
+                                                onChange={(e) => setRegisterData({...registerData, firstName: e.target.value})}
+                                                required
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+
+                                <Form.Group className="mb-3 auth-input-group">
+                                    <FiUser className="input-icon" />
+                                    <Form.Control 
+                                        type="email" 
+                                        placeholder="Email của bạn" 
+                                        className="auth-input" 
+                                        value={registerData.email}
+                                        onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                                        required
+                                    />
+                                </Form.Group>
+
+                                <Form.Group className="mb-3 auth-input-group">
+                                    <FiLock className="input-icon" />
+                                    <Form.Control 
+                                        type="password" 
+                                        placeholder="Mật khẩu" 
+                                        className="auth-input" 
+                                        value={registerData.password}
+                                        onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                                        required
+                                    />
+                                </Form.Group>
+
+                                <Form.Group className="mb-3 auth-input-group">
+                                    <FiLock className="input-icon" />
+                                    <Form.Control 
+                                        type="password" 
+                                        placeholder="Nhập lại mật khẩu" 
+                                        className="auth-input" 
+                                        value={registerData.confirmPassword}
+                                        onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                                        required
+                                    />
+                                </Form.Group>
+                            </>
+                        )}
 
                         <Button variant="primary" type="submit" className="w-100 py-2 fw-bold btn-auth mb-3" disabled={loading}>
                             {loading ? 'Đang xử lý...' : (isLogin ? 'Đăng Nhập' : 'Đăng Ký')}
