@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Nav, Button, Table } from 'react-bootstrap';
+import { Container, Row, Col, Card, Nav, Button, Table, Modal, Form } from 'react-bootstrap';
 import { FiUser, FiMapPin, FiPackage, FiChevronRight } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -71,10 +71,33 @@ const Account = () => {
         }
     }, [activeTab, currentUser]);
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        localStorage.removeItem('logged_user');
-        navigate('/');
+    const [showAddressModal, setShowAddressModal] = useState(false);
+    const [editAddress, setEditAddress] = useState({
+        full_name: '',
+        phone: '',
+        address_detail: ''
+    });
+
+    const handleEditAddress = () => {
+        setEditAddress({
+            full_name: currentUser.full_name,
+            phone: currentUser.phone || '',
+            address_detail: currentUser.address_detail || ''
+        });
+        setShowAddressModal(true);
+    };
+
+    const saveAddress = () => {
+        const updatedUser = { 
+            ...currentUser, 
+            full_name: editAddress.full_name,
+            phone: editAddress.phone,
+            address_detail: editAddress.address_detail
+        };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('logged_user', JSON.stringify(updatedUser));
+        setShowAddressModal(false);
+        alert("Đã cập nhật địa chỉ thành công!");
     };
 
     if (loading || !currentUser) return <div className="text-center py-5">Đang tải...</div>;
@@ -202,10 +225,10 @@ const Account = () => {
                                     <div className="p-4 border border-success border-dashed rounded-3 position-relative" style={{ borderStyle: 'dashed' }}>
                                         <span className="position-absolute top-0 end-0 m-3 text-success small fw-bold">Mặc định</span>
                                         <div className="fw-bold mb-1 fs-5">{currentUser.full_name}</div>
-                                        <div className="text-muted small mb-1">Địa chỉ: , Vietnam</div>
-                                        <div className="text-muted small mb-3">Điện thoại: </div>
+                                        <div className="text-muted small mb-1">Địa chỉ: {currentUser.address_detail || 'Chưa cập nhật'}, Vietnam</div>
+                                        <div className="text-muted small mb-3">Điện thoại: {currentUser.phone || 'Chưa cập nhật'}</div>
                                         <div className="d-flex gap-2">
-                                            <Button variant="outline-secondary" size="sm" className="px-3">Sửa</Button>
+                                            <Button variant="outline-secondary" size="sm" className="px-3" onClick={handleEditAddress}>Sửa</Button>
                                             <Button variant="outline-danger" size="sm" className="px-3">Xóa</Button>
                                         </div>
                                     </div>
@@ -216,7 +239,12 @@ const Account = () => {
                                 <div>
                                     <h6 className="fw-bold mb-4 border-bottom pb-2">Sổ địa chỉ</h6>
                                     <Button variant="primary" className="rounded-pill mb-4 px-4">+ Thêm địa chỉ mới</Button>
-                                    {/* Danh sách địa chỉ tương tự như phần trên */}
+                                    <div className="p-4 border rounded-3 bg-light mb-3">
+                                        <div className="fw-bold mb-1">{currentUser.full_name}</div>
+                                        <div className="text-muted small">Địa chỉ: {currentUser.address_detail || 'Chưa cập nhật'}</div>
+                                        <div className="text-muted small mb-3">Điện thoại: {currentUser.phone || 'Chưa cập nhật'}</div>
+                                        <Button variant="link" className="p-0 text-primary text-decoration-none small" onClick={handleEditAddress}>Chỉnh sửa</Button>
+                                    </div>
                                 </div>
                             )}
 
@@ -268,6 +296,46 @@ const Account = () => {
                     </Card>
                 </Col>
             </Row>
+
+            {/* Modal Sửa địa chỉ */}
+            <Modal show={showAddressModal} onHide={() => setShowAddressModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className="fw-bold">Chỉnh sửa địa chỉ</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small fw-bold">Họ và tên</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                value={editAddress.full_name} 
+                                onChange={(e) => setEditAddress({...editAddress, full_name: e.target.value})}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small fw-bold">Số điện thoại</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                value={editAddress.phone} 
+                                onChange={(e) => setEditAddress({...editAddress, phone: e.target.value})}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small fw-bold">Địa chỉ chi tiết</Form.Label>
+                            <Form.Control 
+                                as="textarea" 
+                                rows={3}
+                                value={editAddress.address_detail} 
+                                onChange={(e) => setEditAddress({...editAddress, address_detail: e.target.value})}
+                            />
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowAddressModal(false)}>Hủy</Button>
+                    <Button variant="primary" onClick={saveAddress}>Lưu thay đổi</Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 };
