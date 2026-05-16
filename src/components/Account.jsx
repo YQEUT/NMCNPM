@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Nav, Button, Table } from 'react-bootstrap';
-import { FiUser, FiMapPin, FiPackage, FiLogOut, FiEdit2, FiTrash2, FiChevronRight } from 'react-icons/fi';
+import { FiUser, FiMapPin, FiPackage, FiChevronRight } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { apiService } from '../services/api';
@@ -13,6 +13,16 @@ const Account = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        const fetchUserOrders = async (userEmail, currentFullName) => {
+            try {
+                const allOrders = await apiService.getOrders();
+                const userOrders = allOrders.filter(o => o.customer_email === userEmail || o.customer_name === currentFullName);
+                setOrders(userOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+            }
+        };
+
         const checkUser = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             let user = null;
@@ -31,23 +41,12 @@ const Account = () => {
                 navigate('/');
             } else {
                 setCurrentUser(user);
-                fetchUserOrders(user.username || user.email);
+                fetchUserOrders(user.username || user.email, user.full_name);
             }
             setLoading(false);
         };
         checkUser();
     }, [navigate]);
-
-    const fetchUserOrders = async (userEmail) => {
-        try {
-            const allOrders = await apiService.getOrders();
-            // Lọc đơn hàng của người dùng này (dựa trên email hoặc tên)
-            const userOrders = allOrders.filter(o => o.customer_email === userEmail || o.customer_name === currentUser?.full_name);
-            setOrders(userOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-        } catch (error) {
-            console.error("Error fetching orders:", error);
-        }
-    };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
