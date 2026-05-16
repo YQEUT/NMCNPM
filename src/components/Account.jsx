@@ -69,7 +69,7 @@ const Account = () => {
         if (currentUser && (activeTab === 'general' || activeTab === 'orders')) {
             fetchUserOrders(currentUser.username || currentUser.email, currentUser.full_name);
         }
-    }, [activeTab]);
+    }, [activeTab, currentUser]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
