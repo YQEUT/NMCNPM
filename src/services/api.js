@@ -81,6 +81,28 @@ export const apiService = {
     return data;
   },
 
+  signIn: async (username, password) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .eq('password', password)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  signInWithGoogle: async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+    if (error) throw error;
+    return data;
+  },
+
   updateOrder: async (orderId, updateData) => {
     const { data, error } = await supabase
       .from('orders')

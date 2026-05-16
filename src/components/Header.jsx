@@ -72,6 +72,19 @@ const Header = () => {
         }
     };
 
+    const handleGoogleLogin = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            await apiService.signInWithGoogle();
+        } catch (err) {
+            console.error(err);
+            setError('Có lỗi xảy ra khi đăng nhập bằng Google!');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleAuth = async (e) => {
         e.preventDefault();
         setError('');
@@ -244,7 +257,13 @@ const Header = () => {
 
                         <div className="divider"><span>Hoặc</span></div>
 
-                        <Button variant="outline-dark" className="w-100 py-2 d-flex align-items-center justify-content-center gap-2 btn-google mb-3" type="button">
+                        <Button 
+                            variant="outline-dark" 
+                            className="w-100 py-2 d-flex align-items-center justify-content-center gap-2 btn-google mb-3" 
+                            type="button"
+                            onClick={handleGoogleLogin}
+                            disabled={loading}
+                        >
                             <FcGoogle size={20} /> Đăng nhập với Google
                         </Button>
 
