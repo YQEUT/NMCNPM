@@ -100,6 +100,7 @@ const Footer = () => {
                         <Col md={6} className="text-center text-md-start mb-3 mb-md-0">
                             <p className="text-muted small mb-0">
                                 © 2024 Bookstore. Thiết kế bởi Antigravity. Tất cả quyền được bảo lưu.
+                                <span className="ms-2 opacity-50" style={{ fontSize: '9px' }}>[v2.0 - Verified]</span>
                             </p>
                         </Col>
                         <Col md={6} className="text-center text-md-end">
