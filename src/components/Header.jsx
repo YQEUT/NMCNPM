@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Container, Modal, Form, Button, Alert } from 'react-bootstrap';
+import { Container, Modal, Form, Button, Alert, Row, Col } from 'react-bootstrap';
 import { FiSearch, FiTruck, FiShoppingCart, FiUser, FiBook, FiLock } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { Link, useNavigate } from 'react-router-dom';
