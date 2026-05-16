@@ -548,7 +548,16 @@ const Admin = () => {
                             <Col md={4}>
                                 <Form.Group className="mb-3">
                                     <Form.Label className="small fw-bold">Năm Xuất Bản</Form.Label>
-                                    <Form.Control type="number" className="bg-light border-0" placeholder="VD: 2024" value={formData.year} onChange={(e) => setFormData({...formData, year: e.target.value})} />
+                                    <Form.Select 
+                                        className="bg-light border-0" 
+                                        value={formData.year} 
+                                        onChange={(e) => setFormData({...formData, year: e.target.value})}
+                                    >
+                                        <option value="">Chọn năm</option>
+                                        {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                                            <option key={y} value={y}>{y}</option>
+                                        ))}
+                                    </Form.Select>
                                 </Form.Group>
                             </Col>
                             <Col md={4}>
