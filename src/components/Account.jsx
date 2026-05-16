@@ -100,6 +100,12 @@ const Account = () => {
         alert("Đã cập nhật địa chỉ thành công!");
     };
 
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        localStorage.removeItem('logged_user');
+        navigate('/');
+    };
+
     if (loading || !currentUser) return <div className="text-center py-5">Đang tải...</div>;
 
     return (
