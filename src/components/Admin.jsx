@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Table, Button, Form, Modal, Row, Col, Alert, Tabs, Tab, Card } from 'react-bootstrap';
 import { apiService } from '../services/api';
-import { FiPlus, FiEdit2, FiTrash2, FiBox, FiGrid, FiBarChart2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiBox, FiGrid, FiBarChart2, FiUsers, FiRefreshCw, FiSearch } from 'react-icons/fi';
 
 const Admin = () => {
     const [categories, setCategories] = useState({});
@@ -18,6 +18,7 @@ const Admin = () => {
     const [msg, setMsg] = useState('');
     const [imgError, setImgError] = useState('');
     const [targetCategories, setTargetCategories] = useState([]);
+    const [customerSearch, setCustomerSearch] = useState('');
 
     const fetchData = useCallback(async () => {
         try {
@@ -127,6 +128,35 @@ const Admin = () => {
         }
     };
 
+    const handleDeleteUser = async (userId, fullName) => {
+        if (window.confirm(`Bạn có chắc muốn xóa người dùng "${fullName}"? Hành động này không thể hoàn tác.`)) {
+            try {
+                await apiService.deleteUser(userId);
+                setMsg(`Đã xóa người dùng ${fullName}`);
+                fetchData();
+                setTimeout(() => setMsg(''), 3000);
+            } catch (error) {
+                console.error(error);
+                alert("Không thể xóa người dùng này!");
+            }
+        }
+    };
+
+    const handleToggleRole = async (user) => {
+        const newRole = user.role === 'admin' ? 'user' : 'admin';
+        if (window.confirm(`Thay đổi vai trò của ${user.full_name} thành ${newRole === 'admin' ? 'Quản trị' : 'Khách hàng'}?`)) {
+            try {
+                await apiService.updateUser(user.id, { role: newRole });
+                setMsg(`Đã cập nhật vai trò cho ${user.full_name}`);
+                fetchData();
+                setTimeout(() => setMsg(''), 3000);
+            } catch (error) {
+                console.error(error);
+                alert("Không thể cập nhật vai trò!");
+            }
+        }
+    };
+
     // Stats calculation
     const totalBooks = Object.values(categories).reduce((acc, curr) => acc + curr.length, 0);
 
@@ -163,8 +193,8 @@ const Admin = () => {
 
             {/* Stats Overview */}
             <Row className="mb-4 g-3">
-                <Col md={4}>
-                    <Card className="border-0 shadow-sm rounded-4 stats-card">
+                <Col md={3}>
+                    <Card className="border-0 shadow-sm rounded-4 stats-card h-100">
                         <Card.Body className="d-flex align-items-center gap-3">
                             <div className="stats-icon bg-primary-light text-primary"><FiBox /></div>
                             <div>
@@ -174,8 +204,8 @@ const Admin = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={4}>
-                    <Card className="border-0 shadow-sm rounded-4 stats-card">
+                <Col md={3}>
+                    <Card className="border-0 shadow-sm rounded-4 stats-card h-100">
                         <Card.Body className="d-flex align-items-center gap-3">
                             <div className="stats-icon bg-success-light text-success"><FiGrid /></div>
                             <div>
@@ -185,12 +215,23 @@ const Admin = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={4}>
-                    <Card className="border-0 shadow-sm rounded-4 stats-card">
+                <Col md={3}>
+                    <Card className="border-0 shadow-sm rounded-4 stats-card h-100">
+                        <Card.Body className="d-flex align-items-center gap-3">
+                            <div className="stats-icon bg-info-light text-info"><FiUsers /></div>
+                            <div>
+                                <div className="text-muted small">Khách hàng</div>
+                                <div className="h4 fw-bold m-0">{users.length}</div>
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={3}>
+                    <Card className="border-0 shadow-sm rounded-4 stats-card h-100">
                         <Card.Body className="d-flex align-items-center gap-3">
                             <div className="stats-icon bg-warning-light text-warning"><FiBarChart2 /></div>
                             <div>
-                                <div className="text-muted small">Trạng thái hệ thống</div>
+                                <div className="text-muted small">Hệ thống</div>
                                 <div className="h4 fw-bold m-0 text-success">Online</div>
                             </div>
                         </Card.Body>
@@ -208,7 +249,7 @@ const Admin = () => {
             >
                 <Tab eventKey="products" title={<span><FiBox className="me-2"/>Sản phẩm</span>} />
                 <Tab eventKey="orders" title={<span><FiGrid className="me-2"/>Đơn hàng</span>} />
-                <Tab eventKey="customers" title={<span><FiPlus className="me-2" style={{transform: 'rotate(45deg)'}}/>Khách hàng</span>} />
+                <Tab eventKey="customers" title={<span><FiUsers className="me-2"/>Khách hàng</span>} />
             </Tabs>
 
             {mainTab === 'products' && (
@@ -308,27 +349,71 @@ const Admin = () => {
 
             {mainTab === 'customers' && (
                 <Card className="border-0 shadow-sm rounded-4">
+                    <Card.Header className="bg-white border-0 py-3">
+                        <div className="d-flex justify-content-between align-items-center">
+                            <h5 className="fw-bold m-0">Danh sách khách hàng</h5>
+                            <div className="d-flex gap-2">
+                                <Form.Control 
+                                    type="text" 
+                                    placeholder="Tìm tên hoặc email..." 
+                                    className="rounded-pill border-0 bg-light px-3 shadow-none" 
+                                    style={{ width: '250px' }}
+                                    value={customerSearch}
+                                    onChange={(e) => setCustomerSearch(e.target.value)}
+                                />
+                                <Button variant="light" className="rounded-circle btn-icon" onClick={fetchData}>
+                                    <FiRefreshCw size={14} />
+                                </Button>
+                            </div>
+                        </div>
+                    </Card.Header>
                     <Card.Body className="p-0">
                         <Table hover className="admin-table m-0">
                             <thead>
                                 <tr>
-                                    <th className="ps-4">Họ tên</th>
-                                    <th>Tên đăng nhập</th>
+                                    <th className="ps-4">Khách hàng</th>
+                                    <th>Email/Username</th>
                                     <th>Vai trò</th>
                                     <th>Ngày tham gia</th>
+                                    <th className="text-end pe-4">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.map(user => (
+                                {users.filter(u => 
+                                    u.full_name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                                    u.username.toLowerCase().includes(customerSearch.toLowerCase())
+                                ).map(user => (
                                     <tr key={user.id} className="align-middle">
-                                        <td className="ps-4 fw-semibold">{user.full_name}</td>
-                                        <td>{user.username}</td>
+                                        <td className="ps-4">
+                                            <div className="d-flex align-items-center gap-3">
+                                                <div className="avatar-small bg-primary-light text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style={{ width: '32px', height: '32px', fontSize: '12px' }}>
+                                                    {user.full_name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="fw-semibold">{user.full_name}</div>
+                                            </div>
+                                        </td>
+                                        <td className="text-muted">{user.username}</td>
                                         <td>
-                                            <span className={`badge ${user.role === 'admin' ? 'bg-danger-subtle text-danger' : 'bg-info-subtle text-info'}`}>
-                                                {user.role === 'admin' ? 'Quản trị' : 'Khách hàng'}
+                                            <span 
+                                                className={`badge cursor-pointer ${user.role === 'admin' ? 'bg-danger-subtle text-danger' : 'bg-info-subtle text-info'}`}
+                                                onClick={() => handleToggleRole(user)}
+                                                title="Nhấn để đổi quyền"
+                                            >
+                                                {user.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'}
                                             </span>
                                         </td>
-                                        <td>{new Date(user.created_at).toLocaleDateString('vi-VN')}</td>
+                                        <td className="small">{new Date(user.created_at).toLocaleDateString('vi-VN')}</td>
+                                        <td className="text-end pe-4">
+                                            <Button 
+                                                variant="light" 
+                                                size="sm" 
+                                                className="rounded-circle btn-icon" 
+                                                onClick={() => handleDeleteUser(user.id, user.full_name)}
+                                                disabled={user.role === 'admin'} // Tránh tự xóa admin hoặc admin xóa nhau dễ dàng
+                                            >
+                                                <FiTrash2 size={14} className="text-danger" />
+                                            </Button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

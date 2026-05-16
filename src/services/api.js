@@ -152,5 +152,24 @@ export const apiService = {
       .delete()
       .eq('id', productId);
     if (error) throw error;
+  },
+
+  updateUser: async (userId, updateData) => {
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  deleteUser: async (userId) => {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+    if (error) throw error;
   }
 };
