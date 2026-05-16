@@ -31,11 +31,14 @@ const Checkout = () => {
         e.preventDefault();
         setLoading(true);
 
+        // Lấy thông tin người dùng từ localStorage hoặc session
+        const savedUser = JSON.parse(localStorage.getItem('logged_user') || '{}');
+        
         const orderData = {
             created_at: new Date().toISOString(),
-            customer_name: "Khách hàng", // Có thể bổ sung input tên nếu cần
+            customer_name: savedUser.full_name || "Khách hàng",
             customer_phone: formData.phone,
-            customer_email: formData.email,
+            customer_email: formData.email || savedUser.email || savedUser.username,
             customer_address: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`,
             items: cartItems,
             total_amount: total,
