@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Container, Badge, Card, Row, Col, Form, InputGroup, Button, Spinner, Modal, Table } from 'react-bootstrap';
 import { FiSearch, FiPackage, FiTruck, FiCheckCircle, FiClock, FiXCircle, FiCalendar, FiUser, FiMapPin, FiPhone, FiInfo, FiMail, FiCreditCard } from 'react-icons/fi';
 import { apiService } from '../services/api';
@@ -13,8 +14,23 @@ const OrderTracking = () => {
     // State cho Modal Chi tiết
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
+        const checkUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setCurrentUser({
+                    full_name: session.user.user_metadata.full_name || session.user.email,
+                    username: session.user.email
+                });
+            } else {
+                const savedUser = localStorage.getItem('logged_user');
+                if (savedUser) setCurrentUser(JSON.parse(savedUser));
+            }
+        };
+        checkUser();
         fetchOrders();
 
         // Tự động xóa kết quả khi đăng xuất
@@ -127,10 +143,17 @@ const OrderTracking = () => {
                 </Card.Body>
             </Card>
 
-            {loading ? (
+            {!currentUser ? (
+                <div className="text-center py-5 bg-white rounded-4 shadow-sm border">
+                    <FiLock size={64} className="text-warning mb-3" />
+                    <h4 className="fw-bold">Vui lòng đăng nhập</h4>
+                    <p className="text-muted mb-4">Bạn cần đăng nhập để sử dụng tính năng tra cứu đơn hàng cá nhân.</p>
+                    <Button variant="primary" className="rounded-pill px-4" onClick={() => navigate('/')}>Quay về Trang chủ</Button>
+                </div>
+            ) : loading ? (
                 <div className="text-center py-5">
                     <Spinner animation="border" variant="primary" />
-                    <p className="mt-3 text-muted">Đang tải danh sách đơn hàng...</p>
+                    <p className="mt-3 text-muted">Đang tải danh sách đơn hàng của bạn...</p>
                 </div>
             ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-5 bg-white rounded-4 shadow-sm border">
