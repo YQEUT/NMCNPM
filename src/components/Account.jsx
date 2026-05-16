@@ -12,21 +12,34 @@ const Account = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchUserOrders = async (userEmail, currentFullName) => {
-            try {
-                const allOrders = await apiService.getOrders();
-                // Lọc đơn hàng: khớp Email HOẶC khớp Tên (không phân biệt hoa thường)
-                const userOrders = allOrders.filter(o => 
-                    (o.customer_email && o.customer_email.toLowerCase() === userEmail.toLowerCase()) || 
-                    (o.customer_name && o.customer_name.toLowerCase() === currentFullName.toLowerCase())
-                );
-                setOrders(userOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-            } catch (error) {
-                console.error("Error fetching orders:", error);
-            }
-        };
+    const fetchUserOrders = async (userEmail, currentFullName) => {
+        if (!userEmail && !currentFullName) return;
+        try {
+            setLoading(true);
+            const allOrders = await apiService.getOrders();
+            console.log("All orders fetched:", allOrders.length);
+            console.log("Searching for:", { userEmail, currentFullName });
 
+            // Bộ lọc cực kỳ linh hoạt
+            const userOrders = allOrders.filter(o => {
+                const orderEmail = (o.customer_email || "").toLowerCase();
+                const orderName = (o.customer_name || "").toLowerCase();
+                const targetEmail = (userEmail || "").toLowerCase();
+                const targetName = (currentFullName || "").toLowerCase();
+
+                return (targetEmail && orderEmail === targetEmail) || 
+                       (targetName && orderName === targetName && orderName !== "khách hàng");
+            });
+
+            setOrders(userOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+        } catch (error) {
+            console.error("Error fetching orders:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         const checkUser = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             let user = null;
@@ -47,10 +60,16 @@ const Account = () => {
                 setCurrentUser(user);
                 fetchUserOrders(user.username || user.email, user.full_name);
             }
-            setLoading(false);
         };
         checkUser();
     }, [navigate]);
+
+    // Gọi lại khi chuyển tab để đảm bảo dữ liệu mới nhất
+    useEffect(() => {
+        if (currentUser && (activeTab === 'general' || activeTab === 'orders')) {
+            fetchUserOrders(currentUser.username || currentUser.email, currentUser.full_name);
+        }
+    }, [activeTab]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
