@@ -278,7 +278,10 @@ const Header = () => {
                                 <div className="user-dropdown-menu shadow-lg rounded-3 border py-2 bg-white position-absolute end-0 mt-2" style={{ width: '180px', zIndex: 1100 }}>
                                     <div 
                                         className="px-3 py-2 border-bottom mb-2 d-flex align-items-center gap-2 fw-bold text-dark small cursor-pointer hover-bg-primary-light"
-                                        onClick={() => {navigate('/account'); setShowUserDropdown(false);}}
+                                        onClick={() => {
+                                            navigate(currentUser.role === 'admin' ? '/admin' : '/account');
+                                            setShowUserDropdown(false);
+                                        }}
                                     >
                                         <FiUser size={14} /> {currentUser.full_name}
                                     </div>
