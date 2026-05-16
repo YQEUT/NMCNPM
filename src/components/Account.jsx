@@ -141,7 +141,19 @@ const Account = () => {
                                     </div>
 
                                     <div className="d-flex justify-content-between align-items-center mb-3">
-                                        <h6 className="fw-bold m-0">Các đơn hàng vừa đặt</h6>
+                                        <h6 className="fw-bold m-0 d-flex align-items-center gap-2">
+                                            Các đơn hàng vừa đặt 
+                                            <Button 
+                                                variant="outline-primary" 
+                                                size="sm" 
+                                                className="rounded-circle p-0 d-flex align-items-center justify-content-center" 
+                                                style={{ width: '24px', height: '24px' }}
+                                                onClick={() => fetchUserOrders(currentUser.username || currentUser.email, currentUser.full_name)}
+                                                title="Làm mới"
+                                            >
+                                                <FiPackage size={12} />
+                                            </Button>
+                                        </h6>
                                         <Button variant="link" className="text-primary text-decoration-none small" onClick={() => setActiveTab('orders')}>Xem tất cả</Button>
                                     </div>
                                     
