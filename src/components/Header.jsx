@@ -69,10 +69,13 @@ const Header = () => {
         // Lắng nghe thay đổi auth
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
-                setCurrentUser({
+                const userObj = {
                     full_name: session.user.user_metadata.full_name || session.user.email,
-                    username: session.user.email
-                });
+                    username: session.user.email,
+                    email: session.user.email
+                };
+                setCurrentUser(userObj);
+                localStorage.setItem('logged_user', JSON.stringify(userObj));
             } else {
                 const savedUser = localStorage.getItem('logged_user');
                 if (!savedUser) setCurrentUser(null);

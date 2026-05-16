@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
 import { useCart } from '../context/CartContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { FiMapPin, FiTruck, FiCreditCard, FiFileText, FiMessageSquare, FiArrowLeft } from 'react-icons/fi';
 import { apiService } from '../services/api';
+import { supabase } from '../supabaseClient';
 
 const Checkout = () => {
     const { cartItems, clearCart } = useCart();
@@ -31,14 +32,18 @@ const Checkout = () => {
         e.preventDefault();
         setLoading(true);
 
-        // Lấy thông tin người dùng từ localStorage hoặc session
+        // Lấy thông tin người dùng từ nhiều nguồn để đảm bảo độ chính xác
+        const { data: { session } } = await supabase.auth.getSession();
         const savedUser = JSON.parse(localStorage.getItem('logged_user') || '{}');
         
+        const currentFullName = session?.user?.user_metadata?.full_name || savedUser.full_name || "Khách hàng";
+        const currentEmail = session?.user?.email || savedUser.email || savedUser.username || formData.email;
+
         const orderData = {
             created_at: new Date().toISOString(),
-            customer_name: savedUser.full_name || "Khách hàng",
+            customer_name: currentFullName,
             customer_phone: formData.phone,
-            customer_email: formData.email || savedUser.email || savedUser.username,
+            customer_email: currentEmail,
             customer_address: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`,
             items: cartItems,
             total_amount: total,

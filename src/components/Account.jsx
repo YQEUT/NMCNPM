@@ -16,7 +16,11 @@ const Account = () => {
         const fetchUserOrders = async (userEmail, currentFullName) => {
             try {
                 const allOrders = await apiService.getOrders();
-                const userOrders = allOrders.filter(o => o.customer_email === userEmail || o.customer_name === currentFullName);
+                // Lọc đơn hàng: khớp Email HOẶC khớp Tên (không phân biệt hoa thường)
+                const userOrders = allOrders.filter(o => 
+                    (o.customer_email && o.customer_email.toLowerCase() === userEmail.toLowerCase()) || 
+                    (o.customer_name && o.customer_name.toLowerCase() === currentFullName.toLowerCase())
+                );
                 setOrders(userOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
             } catch (error) {
                 console.error("Error fetching orders:", error);
