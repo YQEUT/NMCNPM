@@ -153,17 +153,30 @@ const Account = () => {
                                                 <tr>
                                                     <th>Mã đơn</th>
                                                     <th>Ngày đặt</th>
+                                                    <th>Sản phẩm</th>
                                                     <th>Tổng tiền</th>
                                                     <th>Trạng thái</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {orders.slice(0, 3).map(order => (
-                                                    <tr key={order.id}>
+                                                    <tr key={order.id} className="align-middle">
                                                         <td className="fw-bold text-primary">BK{order.id.toString().padStart(8, '0')}</td>
-                                                        <td>{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
-                                                        <td>{Number(order.total_amount).toLocaleString()}đ</td>
-                                                        <td>{order.status}</td>
+                                                        <td className="small">{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
+                                                        <td>
+                                                            <div className="d-flex gap-1 overflow-hidden" style={{ maxWidth: '120px' }}>
+                                                                {order.items && order.items.slice(0, 3).map((item, idx) => (
+                                                                    <img key={idx} src={item.image} alt="" title={item.name} className="rounded border shadow-sm" style={{ width: '25px', height: '35px', objectFit: 'cover' }} />
+                                                                ))}
+                                                                {order.items && order.items.length > 3 && <span className="small text-muted">+{order.items.length - 3}</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td className="fw-bold small">{Number(order.total_amount).toLocaleString()}đ</td>
+                                                        <td>
+                                                            <span className={`badge rounded-pill ${order.status === 'pending' ? 'bg-warning' : 'bg-success'}`}>
+                                                                {order.status === 'pending' ? 'Chờ xử lý' : order.status}
+                                                            </span>
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -210,14 +223,29 @@ const Account = () => {
                                         </thead>
                                         <tbody>
                                             {orders.map(order => (
-                                                <tr key={order.id}>
+                                                <tr key={order.id} className="align-middle">
                                                     <td className="fw-bold text-primary">BK{order.id.toString().padStart(8, '0')}</td>
                                                     <td>{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
-                                                    <td className="small">
-                                                        {order.items.map(i => i.name).join(', ').substring(0, 30)}...
+                                                    <td>
+                                                        <div className="d-flex align-items-center gap-2">
+                                                            <div className="d-flex gap-1">
+                                                                {order.items && order.items.slice(0, 3).map((item, idx) => (
+                                                                    <img key={idx} src={item.image} alt="" className="rounded border shadow-sm" style={{ width: '30px', height: '40px', objectFit: 'cover' }} />
+                                                                ))}
+                                                            </div>
+                                                            <div className="small text-muted">
+                                                                {order.items && order.items.length > 0 ? (
+                                                                    order.items.length === 1 ? order.items[0].name : `${order.items[0].name} và ${order.items.length - 1} sản phẩm khác`
+                                                                ) : 'Không có sản phẩm'}
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td className="fw-bold">{Number(order.total_amount).toLocaleString()}đ</td>
-                                                    <td>{order.status}</td>
+                                                    <td>
+                                                        <span className={`badge rounded-pill ${order.status === 'pending' ? 'bg-warning' : 'bg-success'}`}>
+                                                            {order.status === 'pending' ? 'Chờ xử lý' : order.status}
+                                                        </span>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
