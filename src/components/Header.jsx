@@ -53,26 +53,52 @@ const Header = () => {
         // Kiểm tra session hiện tại (cho Google Login)
         const checkUser = async () => {
             const { data: { session } } = await supabase.auth.getSession();
+            let userObj = null;
+
             if (session?.user) {
-                setCurrentUser({
-                    full_name: session.user.user_metadata.full_name || session.user.email,
-                    username: session.user.email
-                });
+                // Thử tìm role từ bảng users dựa trên email
+                try {
+                    const allUsers = await apiService.getUsers();
+                    const dbUser = allUsers.find(u => u.username === session.user.email);
+                    userObj = {
+                        full_name: session.user.user_metadata.full_name || session.user.email,
+                        username: session.user.email,
+                        role: dbUser ? dbUser.role : 'user'
+                    };
+                } catch (e) {
+                    userObj = {
+                        full_name: session.user.user_metadata.full_name || session.user.email,
+                        username: session.user.email,
+                        role: 'user'
+                    };
+                }
             } else {
-                // Kiểm tra localStorage (cho login thủ công bằng bảng users)
                 const savedUser = localStorage.getItem('logged_user');
-                if (savedUser) setCurrentUser(JSON.parse(savedUser));
+                if (savedUser) userObj = JSON.parse(savedUser);
+            }
+            
+            if (userObj) {
+                console.log("Current User Role:", userObj.role);
+                setCurrentUser(userObj);
             }
         };
         checkUser();
 
         // Lắng nghe thay đổi auth
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             if (session?.user) {
+                let role = 'user';
+                try {
+                    const allUsers = await apiService.getUsers();
+                    const dbUser = allUsers.find(u => u.username === session.user.email);
+                    if (dbUser) role = dbUser.role;
+                } catch (e) {}
+
                 const userObj = {
                     full_name: session.user.user_metadata.full_name || session.user.email,
                     username: session.user.email,
-                    email: session.user.email
+                    email: session.user.email,
+                    role: role
                 };
                 setCurrentUser(userObj);
                 localStorage.setItem('logged_user', JSON.stringify(userObj));
@@ -279,7 +305,9 @@ const Header = () => {
                                     <div 
                                         className="px-3 py-2 border-bottom mb-2 d-flex align-items-center gap-2 fw-bold text-dark small cursor-pointer hover-bg-primary-light"
                                         onClick={() => {
-                                            navigate(currentUser.role === 'admin' ? '/admin' : '/account');
+                                            const role = currentUser.role || 'user';
+                                            console.log("Navigating for role:", role);
+                                            navigate(role === 'admin' ? '/admin' : '/account');
                                             setShowUserDropdown(false);
                                         }}
                                     >
