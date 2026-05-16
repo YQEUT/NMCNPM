@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Badge, Card, Row, Col, Form, InputGroup, Button, Spinner } from 'react-bootstrap';
-import { FiSearch, FiPackage, FiTruck, FiCheckCircle, FiClock, FiXCircle, FiCalendar, FiUser, FiMapPin, FiPhone } from 'react-icons/fi';
+import { Container, Badge, Card, Row, Col, Form, InputGroup, Button, Spinner, Modal, Table } from 'react-bootstrap';
+import { FiSearch, FiPackage, FiTruck, FiCheckCircle, FiClock, FiXCircle, FiCalendar, FiUser, FiMapPin, FiPhone, FiInfo, FiMail, FiCreditCard } from 'react-icons/fi';
 import { apiService } from '../services/api';
 
 const OrderTracking = () => {
@@ -8,6 +8,10 @@ const OrderTracking = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+    
+    // State cho Modal Chi tiết
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
 
     useEffect(() => {
         fetchOrders();
@@ -175,7 +179,17 @@ const OrderTracking = () => {
                                 </Row>
                             </Card.Body>
                             <Card.Footer className="bg-white py-3 border-top-0 d-flex justify-content-end gap-2">
-                                <Button variant="outline-secondary" size="sm" className="rounded-pill px-3" onClick={() => alert('Thông tin chi tiết đã được hiển thị bên trên.')}>Chi tiết</Button>
+                                <Button 
+                                    variant="outline-secondary" 
+                                    size="sm" 
+                                    className="rounded-pill px-3" 
+                                    onClick={() => {
+                                        setSelectedOrder(order);
+                                        setShowDetailModal(true);
+                                    }}
+                                >
+                                    Chi tiết
+                                </Button>
                                 {order.status === 'pending' && <Button variant="danger" size="sm" className="rounded-pill px-3" onClick={() => handleCancelOrder(order.id)}>Hủy đơn</Button>}
                                 {order.status === 'completed' && <Button variant="primary" size="sm" className="rounded-pill px-3">Mua lại</Button>}
                             </Card.Footer>
@@ -183,6 +197,99 @@ const OrderTracking = () => {
                     ))}
                 </div>
             )}
+            {/* Modal Chi tiết đơn hàng */}
+            <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg" centered className="order-detail-modal">
+                <Modal.Header closeButton className="border-0 pb-0">
+                    <Modal.Title className="fw-bold">Chi tiết đơn hàng {selectedOrder && formatOrderId(selectedOrder.id)}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="p-4">
+                    {selectedOrder && (
+                        <>
+                            <Row className="mb-4 g-3">
+                                <Col md={6}>
+                                    <div className="p-3 bg-light rounded-3 h-100">
+                                        <h6 className="fw-bold text-muted text-uppercase small mb-3">Thông tin người nhận</h6>
+                                        <div className="mb-2"><FiUser className="me-2 text-primary" /> <strong>{selectedOrder.customer_name}</strong></div>
+                                        <div className="mb-2 small"><FiPhone className="me-2 text-muted" /> {selectedOrder.customer_phone}</div>
+                                        {selectedOrder.customer_email && <div className="mb-2 small"><FiMail className="me-2 text-muted" /> {selectedOrder.customer_email}</div>}
+                                        <div className="small"><FiMapPin className="me-2 text-muted" /> {selectedOrder.customer_address}</div>
+                                    </div>
+                                </Col>
+                                <Col md={6}>
+                                    <div className="p-3 bg-light rounded-3 h-100">
+                                        <h6 className="fw-bold text-muted text-uppercase small mb-3">Trạng thái & Thanh toán</h6>
+                                        <div className="mb-2 d-flex align-items-center justify-content-between">
+                                            <span>Trạng thái:</span>
+                                            {getStatusBadge(selectedOrder.status)}
+                                        </div>
+                                        <div className="mb-2 d-flex align-items-center justify-content-between small">
+                                            <span><FiCalendar className="me-1" /> Ngày đặt:</span>
+                                            <span>{new Date(selectedOrder.created_at).toLocaleString('vi-VN')}</span>
+                                        </div>
+                                        <div className="d-flex align-items-center justify-content-between small">
+                                            <span><FiCreditCard className="me-1" /> Thanh toán:</span>
+                                            <span className="text-uppercase fw-bold text-primary">{selectedOrder.payment_method || 'COD'}</span>
+                                        </div>
+                                    </div>
+                                </Col>
+                            </Row>
+
+                            <h6 className="fw-bold text-muted text-uppercase small mb-3">Danh sách sản phẩm</h6>
+                            <Table responsive className="align-middle">
+                                <thead className="bg-light">
+                                    <tr>
+                                        <th>Sản phẩm</th>
+                                        <th className="text-center">Số lượng</th>
+                                        <th className="text-end">Đơn giá</th>
+                                        <th className="text-end">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {selectedOrder.items.map((item, idx) => (
+                                        <tr key={idx}>
+                                            <td>
+                                                <div className="d-flex align-items-center gap-2">
+                                                    <img src={item.image} alt="" className="rounded shadow-sm" style={{ width: '40px', height: '55px', objectFit: 'cover' }} />
+                                                    <span className="small fw-bold">{item.name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="text-center">x{item.cartQuantity}</td>
+                                            <td className="text-end small">{Number(item.price).toLocaleString()}đ</td>
+                                            <td className="text-end fw-bold">{(item.price * item.cartQuantity).toLocaleString()}đ</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colSpan="3" className="text-end fw-bold">Tạm tính:</td>
+                                        <td className="text-end fw-bold">{(Number(selectedOrder.total_amount) - 20000).toLocaleString()}đ</td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan="3" className="text-end text-muted">Phí vận chuyển:</td>
+                                        <td className="text-end text-muted">20.000đ</td>
+                                    </tr>
+                                    <tr className="table-primary">
+                                        <td colSpan="3" className="text-end fw-bold fs-5">TỔNG CỘNG:</td>
+                                        <td className="text-end fw-bold fs-5 text-primary">{Number(selectedOrder.total_amount).toLocaleString()}đ</td>
+                                    </tr>
+                                </tfoot>
+                            </Table>
+
+                            {selectedOrder.note && (
+                                <div className="mt-3 p-3 bg-warning-light rounded-3 border-start border-warning border-4">
+                                    <FiInfo className="me-2 text-warning" /> <strong>Ghi chú:</strong> {selectedOrder.note}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </Modal.Body>
+                <Modal.Footer className="border-0 pt-0">
+                    <Button variant="secondary" onClick={() => setShowDetailModal(false)} className="rounded-pill px-4">Đóng</Button>
+                    {selectedOrder && selectedOrder.status === 'pending' && (
+                        <Button variant="danger" onClick={() => {setShowDetailModal(false); handleCancelOrder(selectedOrder.id);}} className="rounded-pill px-4">Hủy đơn hàng</Button>
+                    )}
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 };

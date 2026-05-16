@@ -5,6 +5,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { useCart } from '../context/CartContext';
+import { supabase } from '../supabaseClient';
 
 const Header = () => {
     const { cartCount } = useCart();
@@ -19,6 +20,9 @@ const Header = () => {
     const [loginData, setLoginData] = useState({ username: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [showUserDropdown, setShowUserDropdown] = useState(false);
+    const userMenuRef = useRef(null);
 
     const navigate = useNavigate();
 
@@ -39,14 +43,49 @@ const Header = () => {
         };
         fetchAllBooks();
 
-        // Đóng gợi ý khi bấm ra ngoài
+        // Kiểm tra session hiện tại (cho Google Login)
+        const checkUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setCurrentUser({
+                    full_name: session.user.user_metadata.full_name || session.user.email,
+                    username: session.user.email
+                });
+            } else {
+                // Kiểm tra localStorage (cho login thủ công bằng bảng users)
+                const savedUser = localStorage.getItem('logged_user');
+                if (savedUser) setCurrentUser(JSON.parse(savedUser));
+            }
+        };
+        checkUser();
+
+        // Lắng nghe thay đổi auth
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                setCurrentUser({
+                    full_name: session.user.user_metadata.full_name || session.user.email,
+                    username: session.user.email
+                });
+            } else {
+                const savedUser = localStorage.getItem('logged_user');
+                if (!savedUser) setCurrentUser(null);
+            }
+        });
+
+        // Đóng gợi ý và dropdown khi bấm ra ngoài
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
                 setShowSuggestions(false);
             }
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+                setShowUserDropdown(false);
+            }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            subscription.unsubscribe();
+        };
     }, []);
 
     const handleSearchChange = (e) => {
@@ -100,6 +139,8 @@ const Header = () => {
 
                 if (user) {
                     console.log('Login success:', user);
+                    setCurrentUser(user);
+                    localStorage.setItem('logged_user', JSON.stringify(user));
                     setShowAuth(false);
                     if (user.role === 'admin') {
                         navigate('/admin');
@@ -133,6 +174,14 @@ const Header = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        localStorage.removeItem('logged_user');
+        setCurrentUser(null);
+        setShowUserDropdown(false);
+        navigate('/');
     };
 
     return (
@@ -200,9 +249,26 @@ const Header = () => {
                             <span>Tra cứu đơn hàng</span>
                         </Link>
 
-                        <div className="header-item cursor-pointer" onClick={() => setShowAuth(true)}>
-                            <FiUser />
-                            <span>Tài khoản</span>
+                        <div className="position-relative" ref={userMenuRef}>
+                            <div className="header-item cursor-pointer" onClick={() => currentUser ? setShowUserDropdown(!showUserDropdown) : setShowAuth(true)}>
+                                <FiUser />
+                                <span>{currentUser ? currentUser.full_name : 'Tài khoản'}</span>
+                            </div>
+
+                            {/* User Dropdown Menu */}
+                            {currentUser && showUserDropdown && (
+                                <div className="user-dropdown-menu shadow-lg rounded-3 border py-2 bg-white position-absolute end-0 mt-2" style={{ width: '180px', zIndex: 1100 }}>
+                                    <div className="px-3 py-2 border-bottom mb-2 d-flex align-items-center gap-2 fw-bold text-dark small">
+                                        <FiUser size={14} /> {currentUser.full_name}
+                                    </div>
+                                    <div 
+                                        className="dropdown-item px-3 py-2 cursor-pointer d-flex align-items-center gap-2 text-danger small"
+                                        onClick={handleLogout}
+                                    >
+                                        <FiLock size={14} /> Đăng xuất
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <Link to="/cart" className="header-item">

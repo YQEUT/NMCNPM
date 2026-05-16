@@ -603,6 +603,24 @@ body {
   padding-left: 1.25rem !important;
 }
 
+.user-dropdown-menu {
+  background: white;
+  min-width: 180px;
+  right: 0;
+  top: 100%;
+  z-index: 1100;
+}
+
+.dropdown-item {
+  transition: var(--transition);
+  color: var(--text-dark);
+  text-decoration: none;
+}
+
+.dropdown-item:hover {
+  background-color: #f8fafc;
+}
+
 .cursor-pointer {
   cursor: pointer;
 }
