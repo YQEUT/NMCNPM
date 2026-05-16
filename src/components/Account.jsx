@@ -13,9 +13,13 @@ const Account = () => {
     const navigate = useNavigate();
 
     const fetchUserOrders = async (userEmail, currentFullName) => {
-        if (!userEmail && !currentFullName) return;
+        if (!userEmail && !currentFullName) {
+            setOrders([]);
+            return;
+        }
         try {
             setLoading(true);
+            setOrders([]); // Luôn xóa dữ liệu cũ trước khi tải dữ liệu mới
             const allOrders = await apiService.getOrders();
             console.log("All orders fetched:", allOrders.length);
             console.log("Searching for:", { userEmail, currentFullName });
