@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Badge, Card, Row, Col, Form, InputGroup, Button, Spinner, Modal, Table } from 'react-bootstrap';
 import { FiSearch, FiPackage, FiTruck, FiCheckCircle, FiClock, FiXCircle, FiCalendar, FiUser, FiMapPin, FiPhone, FiInfo, FiMail, FiCreditCard } from 'react-icons/fi';
 import { apiService } from '../services/api';
+import { supabase } from '../supabaseClient';
 
 const OrderTracking = () => {
     const [orders, setOrders] = useState([]);
@@ -15,6 +16,16 @@ const OrderTracking = () => {
 
     useEffect(() => {
         fetchOrders();
+
+        // Tự động xóa kết quả khi đăng xuất
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') {
+                setOrders([]);
+                setSearchTerm('');
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const fetchOrders = async () => {
