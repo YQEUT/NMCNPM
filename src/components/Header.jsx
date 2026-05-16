@@ -195,10 +195,11 @@ const Header = () => {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        localStorage.removeItem('logged_user');
+        localStorage.clear();
         setCurrentUser(null);
         setShowUserDropdown(false);
         navigate('/');
+        window.location.reload();
     };
 
     return (

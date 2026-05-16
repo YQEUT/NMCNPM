@@ -106,8 +106,9 @@ const Account = () => {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        localStorage.removeItem('logged_user');
+        localStorage.clear();
         navigate('/');
+        window.location.reload();
     };
 
     if (loading || !currentUser) return <div className="text-center py-5">Đang tải...</div>;
