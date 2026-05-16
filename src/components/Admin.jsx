@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Table, Button, Form, Modal, Row, Col, Alert, Tabs, Tab, Card } from 'react-bootstrap';
 import { apiService } from '../services/api';
-import { apiService } from '../services/api';
 import { FiPlus, FiEdit2, FiTrash2, FiBox, FiGrid, FiBarChart2, FiUsers, FiRefreshCw, FiSearch, FiEye, FiDollarSign, FiTruck, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 
 const Admin = () => {
